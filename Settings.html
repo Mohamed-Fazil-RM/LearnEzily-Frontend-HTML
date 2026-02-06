@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings & Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        // Configure Tailwind to use class-based dark mode
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        magenta: {
+                            500: '#d946ef',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --accent-color: #d946ef;
+            --accent-color-rgb: 217, 70, 239;
+        }
+
+        /* Using the requested #F5F5F0 for light theme background */
+        .light {
+            --bg-main: #F5F5F0;
+            --bg-card: #FFFFFF;
+            --bg-modal: #FFFFFF;
+            --text-primary: #1C1C1E;
+            --text-secondary: #636366;
+            --border-color: #E5E5E0;
+            --input-bg: #F9F9F9;
+        }
+
+        .dark {
+            --bg-main: #0A0A0A;
+            --bg-card: #121212;
+            --bg-modal: #161618;
+            --text-primary: #FFFFFF;
+            --text-secondary: #8E8E93;
+            --border-color: #2C2C2E;
+            --input-bg: #1C1C1E;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .settings-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .text-secondary { color: var(--text-secondary); }
+        .border-divider { border-color: var(--border-color); }
+
+        /* Custom Toggle Styling */
+        .toggle-bg {
+            background-color: #3A3A3C;
+            transition: background-color 0.3s;
+        }
+        input:checked + .toggle-bg {
+            background-color: var(--accent-color);
+        }
+        
+        /* Color Wheel Style */
+        .color-wheel {
+            background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+            border: 2px solid white;
+        }
+
+        .input-field {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.2);
+        }
+
+        .btn-primary {
+            background-color: var(--accent-color);
+            color: white;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        /* View Switching Animations */
+        .view {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .view.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Star Rating Styles */
+        .star-btn {
+            color: var(--text-secondary);
+            transition: color 0.2s, transform 0.1s;
+        }
+        .star-btn.active {
+            color: var(--accent-color);
+        }
+
+        /* Modal Backdrop */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="font-sans min-h-screen transition-colors duration-300">
+
+    <!-- VIEW 1: SETTINGS -->
+    <div id="view-settings" class="view active max-w-2xl mx-auto py-16 px-6">
+        <h1 class="text-3xl font-bold mb-10 ml-1">Settings</h1>
+
+        <!-- Appearance Section -->
+        <h2 class="text-[11px] font-bold tracking-[0.15em] text-secondary uppercase mb-4 ml-1">Appearance</h2>
+        <div class="settings-card rounded-[20px] overflow-hidden mb-12">
+            <!-- Dark Mode -->
+            <div class="p-6 flex items-center justify-between border-b border-divider">
+                <div class="space-y-0.5">
+                    <p class="font-bold text-[15px]">Dark Mode</p>
+                    <p class="text-[13px] text-secondary">Switch between dark and light themes</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer group">
+                    <input type="checkbox" id="dark-mode-toggle" class="sr-only peer" checked>
+                    <div class="w-[52px] h-[28px] toggle-bg rounded-full peer-focus:outline-none after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:after:translate-x-[24px]"></div>
+                </label>
+            </div>
+
+            <!-- Accent Color -->
+            <div class="p-6 flex items-center justify-between">
+                <div class="space-y-0.5">
+                    <p class="font-bold text-[15px]">Accent Color</p>
+                    <p class="text-[13px] text-secondary">Choose your brand color</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button data-hex="#f59e0b" style="background-color: #f59e0b;" class="color-btn w-6 h-6 rounded-full transition-transform hover:scale-110 active:scale-95"></button>
+                    <button data-hex="#d946ef" style="background-color: #d946ef;" class="color-btn w-6 h-6 rounded-full transition-transform hover:scale-110 active:scale-95 ring-2 ring-offset-2 ring-offset-black ring-white"></button>
+                    <button data-hex="#10b981" style="background-color: #10b981;" class="color-btn w-6 h-6 rounded-full transition-transform hover:scale-110 active:scale-95"></button>
+                    <button data-hex="#6366f1" style="background-color: #6366f1;" class="color-btn w-6 h-6 rounded-full transition-transform hover:scale-110 active:scale-95"></button>
+                    <div class="relative w-7 h-7 ml-1">
+                        <input type="color" id="customColor" value="#d946ef" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                        <div class="color-wheel w-full h-full rounded-full shadow-sm"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Section -->
+        <h2 class="text-[11px] font-bold tracking-[0.15em] text-secondary uppercase mb-4 ml-1">Account</h2>
+        <div class="settings-card rounded-[20px] overflow-hidden mb-12">
+            <button onclick="navigateTo('view-edit-profile')" class="w-full p-6 flex items-center justify-between hover:bg-white/5 border-b border-divider transition-colors group text-left">
+                <div class="text-[15px] font-bold">Edit Profile</div>
+                <i class="fa-solid fa-chevron-right text-[12px] text-secondary/50 group-hover:text-[var(--accent-color)] transition-colors"></i>
+            </button>
+            <button onclick="showToast('Preparing your data...')" class="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-colors group text-left">
+                <div class="text-[15px] font-bold">Export Data</div>
+                <i class="fa-solid fa-download text-[14px] text-secondary/50 group-hover:text-[var(--accent-color)] transition-colors"></i>
+            </button>
+        </div>
+
+        <!-- About Section -->
+        <h2 class="text-[11px] font-bold tracking-[0.15em] text-secondary uppercase mb-4 ml-1">About</h2>
+        <div class="settings-card rounded-[20px] overflow-hidden">
+            <div class="p-6 flex items-center justify-between border-b border-divider">
+                <div class="space-y-0.5">
+                    <p class="font-bold text-[15px]">Version</p>
+                    <p class="text-[13px] text-secondary">You are using the latest stable build</p>
+                </div>
+                <span class="text-[13px] font-mono font-bold px-3 py-1 rounded-full bg-white/10 text-secondary border border-divider">v2.4.0</span>
+            </div>
+            <button onclick="toggleFeedbackModal(true)" class="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-colors group text-left">
+                <div class="text-[15px] font-bold">Feedback</div>
+                <i class="fa-solid fa-arrow-up-right-from-square text-[12px] text-secondary/50 group-hover:text-[var(--accent-color)] transition-colors"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- VIEW 2: EDIT PROFILE -->
+    <div id="view-edit-profile" class="view max-w-2xl mx-auto py-16 px-6">
+        <div class="flex items-center gap-4 mb-8">
+            <button onclick="navigateTo('view-settings')" class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-white/5 transition-colors text-secondary hover:text-white">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h1 class="text-3xl font-bold">Edit Profile</h1>
+        </div>
+
+        <form onsubmit="handleProfileSave(event)">
+            <div class="settings-card rounded-[24px] overflow-hidden p-8 space-y-6">
+                <div class="space-y-1.5">
+                    <label class="text-[11px] font-bold tracking-[0.1em] text-secondary uppercase ml-1">Name</label>
+                    <input type="text" placeholder="Enter your full name" class="w-full h-12 px-4 rounded-xl input-field font-medium text-[15px]" required>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[11px] font-bold tracking-[0.1em] text-secondary uppercase ml-1">City</label>
+                    <input type="text" placeholder="e.g. New York" class="w-full h-12 px-4 rounded-xl input-field font-medium text-[15px]" required>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-bold tracking-[0.1em] text-secondary uppercase ml-1">Department</label>
+                        <input type="text" placeholder="e.g. Computer Science" class="w-full h-12 px-4 rounded-xl input-field font-medium text-[15px]" required>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-[11px] font-bold tracking-[0.1em] text-secondary uppercase ml-1">College Name</label>
+                        <input type="text" placeholder="Enter college name" class="w-full h-12 px-4 rounded-xl input-field font-medium text-[15px]" required>
+                    </div>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-[11px] font-bold tracking-[0.1em] text-secondary uppercase ml-1">Email ID</label>
+                    <input type="email" placeholder="name@college.edu" class="w-full h-12 px-4 rounded-xl input-field font-medium text-[15px]" required>
+                </div>
+
+                <div class="pt-4 flex gap-3">
+                    <button type="submit" class="flex-1 h-12 rounded-xl btn-primary font-bold text-[15px] shadow-lg shadow-magenta-500/20">
+                        Save Changes
+                    </button>
+                    <button type="button" onclick="navigateTo('view-settings')" class="px-8 h-12 rounded-xl border border-divider font-bold text-[15px] hover:bg-white/5 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- MODAL: SEND FEEDBACK -->
+    <div id="modal-feedback" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="modal-overlay absolute inset-0" onclick="toggleFeedbackModal(false)"></div>
+        
+        <div class="settings-card rounded-[32px] w-full max-w-lg p-10 relative z-10 shadow-2xl animate-in zoom-in-95 duration-200" style="background-color: var(--bg-modal);">
+            <!-- Close Button -->
+            <button onclick="toggleFeedbackModal(false)" class="absolute top-8 right-8 text-secondary hover:text-white transition-colors">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+
+            <!-- Modal Content -->
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold mb-3 tracking-tight" style="color: var(--accent-color);">Send Feedback</h2>
+                <p class="text-[14px] text-secondary px-4">We'd love to hear your thoughts, suggestions, or issues!</p>
+            </div>
+
+            <!-- Rating Stars -->
+            <div class="flex justify-center gap-3 mb-6" id="star-container">
+                <button onclick="setRating(1)" class="star-btn text-2xl"><i class="fa-solid fa-star"></i></button>
+                <button onclick="setRating(2)" class="star-btn text-2xl"><i class="fa-solid fa-star"></i></button>
+                <button onclick="setRating(3)" class="star-btn text-2xl"><i class="fa-solid fa-star"></i></button>
+                <button onclick="setRating(4)" class="star-btn text-2xl"><i class="fa-solid fa-star"></i></button>
+                <button onclick="setRating(5)" class="star-btn text-2xl"><i class="fa-solid fa-star"></i></button>
+            </div>
+
+            <div class="space-y-6">
+                <textarea 
+                    id="feedback-text"
+                    placeholder="Enter your feedback here..." 
+                    class="w-full h-32 p-5 rounded-2xl input-field font-medium text-[15px] resize-none block"
+                ></textarea>
+
+                <div class="flex items-center justify-end gap-6 pt-2">
+                    <button onclick="toggleFeedbackModal(false)" class="text-[15px] font-bold text-secondary hover:text-white transition-colors">
+                        Cancel
+                    </button>
+                    <button onclick="submitFeedback()" class="h-12 px-8 rounded-xl btn-primary font-bold text-[15px] shadow-lg shadow-accent/20">
+                        Send Feedback
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[60] bg-white text-black dark:bg-[#1C1C1E] dark:text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 hidden opacity-0 transition-all">
+        <span id="toast-message" class="text-sm font-bold">Action completed</span>
+    </div>
+
+    <script>
+        // --- Navigation Logic ---
+        function navigateTo(viewId) {
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+            document.getElementById(viewId).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        // --- Theme Logic ---
+        const darkToggle = document.getElementById('dark-mode-toggle');
+        const root = document.documentElement;
+
+        function setTheme(isDark) {
+            if (isDark) {
+                root.classList.add('dark');
+                root.classList.remove('light');
+                darkToggle.checked = true;
+            } else {
+                root.classList.add('light');
+                root.classList.remove('dark');
+                darkToggle.checked = false;
+            }
+        }
+
+        darkToggle.addEventListener('change', (e) => setTheme(e.target.checked));
+
+        // --- Accent Color Logic ---
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '217, 70, 239';
+        }
+
+        function setAccentColor(hex) {
+            document.documentElement.style.setProperty('--accent-color', hex);
+            document.documentElement.style.setProperty('--accent-color-rgb', hexToRgb(hex));
+            
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                const isActive = btn.dataset.hex.toLowerCase() === hex.toLowerCase();
+                if (isActive) btn.classList.add('ring-2', 'ring-offset-2', 'ring-offset-black', 'ring-white');
+                else btn.classList.remove('ring-2', 'ring-offset-2', 'ring-offset-black', 'ring-white');
+            });
+        }
+
+        document.querySelectorAll('.color-btn').forEach(btn => {
+            btn.addEventListener('click', () => setAccentColor(btn.dataset.hex));
+        });
+
+        document.getElementById('customColor').addEventListener('input', (e) => {
+            setAccentColor(e.target.value);
+        });
+
+        // --- Profile Actions ---
+        function handleProfileSave(event) {
+            event.preventDefault();
+            showToast('Profile updated successfully');
+            setTimeout(() => navigateTo('view-settings'), 1000);
+        }
+
+        // --- Feedback Modal Logic ---
+        let currentRating = 0;
+
+        function toggleFeedbackModal(show) {
+            const modal = document.getElementById('modal-feedback');
+            if (show) {
+                modal.classList.remove('hidden');
+                setRating(0); // Reset rating on open
+                document.getElementById('feedback-text').value = '';
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function setRating(rating) {
+            currentRating = rating;
+            const stars = document.querySelectorAll('.star-btn');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+
+        function submitFeedback() {
+            const text = document.getElementById('feedback-text').value;
+            if (currentRating === 0) {
+                showToast('Please select a rating');
+                return;
+            }
+            // Log for simulation
+            console.log('Feedback:', { rating: currentRating, comment: text });
+            
+            toggleFeedbackModal(false);
+            showToast('Thank you for your feedback!');
+        }
+
+        // --- Toast Logic ---
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('opacity-100'), 10);
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 3000);
+        }
+
+        // Init theme on load
+        setTheme(true);
+    </script>
+</body>
+</html>
