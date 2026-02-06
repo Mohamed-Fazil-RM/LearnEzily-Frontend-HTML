@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade Calculator & Predictor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #F5F5F0;
+        }
+
+        .text-gradient {
+            background: linear-gradient(to right, #a855f7, #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- PHYSICAL BUTTON TOGGLE STYLES --- */
+        .toggle-container {
+            background: #e2e8f0;
+            padding: 6px;
+            display: inline-flex;
+            position: relative;
+            border-radius: 14px;
+            border: 1px solid #cbd5e1;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .toggle-btn {
+            padding: 12px 32px;
+            font-weight: 800;
+            font-size: 0.95rem;
+            cursor: pointer;
+            position: relative;
+            z-index: 10;
+            transition: color 0.3s ease;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+        }
+
+        .toggle-btn.active {
+            color: #1e1b4b;
+        }
+
+        /* The Sliding Button Indicator */
+        .toggle-indicator {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            height: calc(100% - 12px);
+            background: #ffffff;
+            border-radius: 10px;
+            /* 4-Sided Shiny Gradient Border */
+            border: 2px solid transparent;
+            background-image: linear-gradient(white, white), linear-gradient(135deg, #a855f7, #ec4899);
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+            /* High-depth shadow to look like a physical button */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), width 0.3s ease;
+            z-index: 1;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(203, 213, 225, 0.6);
+            border-radius: 16px;
+        }
+
+        .semester-card {
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] { -moz-appearance: textfield; }
+        
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .scale-badge {
+            transition: all 0.3s ease;
+            border: 1.5px solid transparent;
+        }
+        .scale-badge:hover:not(:disabled) {
+            transform: scale(1.05);
+            border-color: rgba(168, 85, 247, 0.3);
+        }
+
+        .grade-btn-active {
+            background: #9333ea !important;
+            border-color: #9333ea !important;
+            color: white !important;
+            box-shadow: 0 10px 15px -3px rgba(147, 51, 234, 0.3) !important;
+        }
+        .grade-btn-active span {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        .sub-grade-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 48px;
+            width: 100%;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #64748b;
+            transition: all 0.3s ease;
+        }
+        .grade-pass { color: #4f46e5; border-color: #c7d2fe; background: #f5f3ff; }
+        .grade-fail { color: #ef4444; border-color: #fecaca; background: #fef2f2; }
+        
+        input:focus {
+            outline: none;
+            border-color: #9333ea !important;
+            ring: 2px;
+            ring-color: #9333ea;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 pb-20">
+
+    <header class="pt-16 pb-12 px-4 text-center">
+        <h1 class="text-5xl md:text-6xl font-extrabold mb-4 tracking-tight text-gradient">
+            Grade Hub
+        </h1>
+        <p class="text-slate-500 text-lg md:text-xl font-medium max-w-2xl mx-auto mb-10">
+            Track your semester progress or predict your final outcomes.
+        </p>
+
+        <div class="flex justify-center mb-8">
+            <div class="toggle-container shadow-inner">
+                <!-- The indicator is the "button" itself -->
+                <div id="toggle-indicator" class="toggle-indicator"></div>
+                <div onclick="switchTab('tracker')" id="tab-tracker" class="toggle-btn active">
+                    <i class="fas fa-calculator text-xs"></i>
+                    Calculate Grade
+                </div>
+                <div onclick="switchTab('predictor')" id="tab-predictor" class="toggle-btn">
+                    <i class="fas fa-wand-magic-sparkles text-xs"></i>
+                    Predict Grade
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4">
+        
+        <!-- GRADE TRACKER SECTION -->
+        <section id="tracker-section" class="fade-in block">
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                <h2 class="text-2xl font-bold text-slate-800">Semester Tracker</h2>
+                <div class="flex space-x-3">
+                    <button onclick="addSemester()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition shadow-lg flex items-center">
+                        <i class="fas fa-plus mr-2 text-xs"></i> Add Semester
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-10 p-6 glass-card border border-slate-200">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center">
+                    <i class="fas fa-info-circle mr-2 text-indigo-500"></i> Grading Scale Reference
+                </h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
+                    <div class="scale-badge flex flex-col items-center p-3 rounded-2xl bg-white border border-slate-100 shadow-sm">
+                        <span class="text-xl font-black text-indigo-600 leading-none">O</span>
+                        <span class="text-[10px] font-bold text-slate-400 mt-2 uppercase">90 - 100</span>
+                    </div>
+                    <div class="scale-badge flex flex-col items-center p-3 rounded-2xl bg-white border border-slate-100 shadow-sm">
+                        <span class="text-xl font-black text-indigo-600 leading-none">A</span>
+                        <span class="text-[10px] font-bold text-slate-400 mt-2 uppercase">80 - 89</span>
+                    </div>
+                    <div class="scale-badge flex flex-col items-center p-3 rounded-2xl bg-white border border-slate-100 shadow-sm">
+                        <span class="text-xl font-black text-indigo-600 leading-none">B</span>
+                        <span class="text-[10px] font-bold text-slate-400 mt-2 uppercase">70 - 79</span>
+                    </div>
+                    <div class="scale-badge flex flex-col items-center p-3 rounded-2xl bg-white border border-slate-100 shadow-sm">
+                        <span class="text-xl font-black text-indigo-600 leading-none">C</span>
+                        <span class="text-[10px] font-bold text-slate-400 mt-2 uppercase">60 - 69</span>
+                    </div>
+                    <div class="scale-badge flex flex-col items-center p-3 rounded-2xl bg-white border border-slate-100 shadow-sm">
+                        <span class="text-xl font-black text-indigo-600 leading-none">D</span>
+                        <span class="text-[10px] font-bold text-slate-400 mt-2 uppercase">50 - 59</span>
+                    </div>
+                    <div class="scale-badge flex flex-col items-center p-3 rounded-2xl bg-white border border-slate-100 shadow-sm">
+                        <span class="text-xl font-black text-indigo-600 leading-none">E</span>
+                        <span class="text-[10px] font-bold text-slate-400 mt-2 uppercase">40 - 49</span>
+                    </div>
+                    <div class="scale-badge flex flex-col items-center p-3 rounded-2xl bg-red-50/50 border border-red-100 shadow-sm">
+                        <span class="text-xl font-black text-red-500 leading-none">F</span>
+                        <span class="text-[10px] font-bold text-red-400 mt-2 uppercase">&lt; 40</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="semester-container" class="space-y-6"></div>
+
+            <div class="mt-12 flex justify-center">
+                <button onclick="calculateCGPA()" class="group bg-indigo-600 hover:bg-indigo-700 text-white px-12 py-5 rounded-2xl font-black text-xl transition-all shadow-xl hover:shadow-indigo-200/50 flex items-center space-x-3 transform active:scale-95">
+                    <span>Calculate Results</span>
+                    <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            </div>
+
+            <div id="cgpa-result" class="hidden mt-10 p-10 glass-card border-2 border-indigo-200 text-center animate-pulse-once">
+                <div class="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-500 mb-2 uppercase tracking-widest text-center">Cumulative GPA</h3>
+                        <div id="cgpa-value" class="text-7xl font-black text-indigo-600 mb-2">0.00</div>
+                    </div>
+                    <div class="w-px h-16 bg-slate-200 hidden md:block"></div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-500 mb-2 uppercase tracking-widest text-center">Overall Grade</h3>
+                        <div id="grade-letter-value" class="text-7xl font-black text-purple-600 mb-2">F</div>
+                    </div>
+                </div>
+                <p id="cgpa-text" class="text-slate-600 font-medium text-lg mt-6"></p>
+            </div>
+        </section>
+
+        <!-- GRADE GOAL PREDICTOR SECTION -->
+        <section id="predictor-section" class="hidden fade-in max-w-2xl mx-auto">
+            <div class="glass-card p-10 shadow-2xl border border-slate-200 space-y-8">
+                <div>
+                    <label class="block text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Internal Marks (out of 25)</label>
+                    <div class="relative">
+                        <input type="number" id="internal-marks" max="25" min="0" placeholder="Enter score" 
+                               oninput="validateRange(this, 0, 25)"
+                               class="w-full pl-6 pr-16 py-4 bg-slate-100/50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 transition-all text-xl font-bold">
+                        <span class="absolute right-6 top-4 text-slate-400 font-bold">/ 25</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Select Target Grade (Required Threshold)</label>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3">
+                        <button onclick="selectGrade('O', 10)" data-grade="O" class="grade-btn scale-badge flex flex-col items-center p-3 rounded-2xl bg-white border border-slate-200 shadow-sm transition-all">
+                            <span class="text-xl font-black text-indigo-600 leading-none">O</span>
+                            <span class="text-[10px] font-bold text-slate-400 mt-2 uppercase">90+</span>
+                        </button>
+                        <button onclick="selectGrade('A', 9)" data-grade="A" class="grade-btn scale-badge flex flex-col items-center p-3 rounded-2xl bg-white border border-slate-200 shadow-sm transition-all">
+                            <span class="text-xl font-black text-indigo-600 leading-none">A</span>
+                            <span class="text-[10px] font-bold text-slate-400 mt-2 uppercase">80+</span>
+                        </button>
+                        <button onclick="selectGrade('B', 8)" data-grade="B" class="grade-btn scale-badge flex flex-col items-center p-3 rounded-2xl bg-white border border-slate-200 shadow-sm transition-all">
+                            <span class="text-xl font-black text-indigo-600 leading-none">B</span>
+                            <span class="text-[10px] font-bold text-slate-400 mt-2 uppercase">70+</span>
+                        </button>
+                        <button onclick="selectGrade('C', 7)" data-grade="C" class="grade-btn scale-badge flex flex-col items-center p-3 rounded-2xl bg-white border border-slate-200 shadow-sm transition-all">
+                            <span class="text-xl font-black text-indigo-600 leading-none">C</span>
+                            <span class="text-[10px] font-bold text-slate-400 mt-2 uppercase">60+</span>
+                        </button>
+                        <button onclick="selectGrade('D', 6)" data-grade="D" class="grade-btn scale-badge flex flex-col items-center p-3 rounded-2xl bg-white border border-slate-200 shadow-sm transition-all">
+                            <span class="text-xl font-black text-indigo-600 leading-none">D</span>
+                            <span class="text-[10px] font-bold text-slate-400 mt-2 uppercase">50+</span>
+                        </button>
+                        <button onclick="selectGrade('E', 5)" data-grade="E" class="grade-btn scale-badge flex flex-col items-center p-3 rounded-2xl bg-white border border-slate-200 shadow-sm transition-all">
+                            <span class="text-xl font-black text-indigo-600 leading-none">E</span>
+                            <span class="text-[10px] font-bold text-slate-400 mt-2 uppercase">40+</span>
+                        </button>
+                        <button disabled class="opacity-40 cursor-not-allowed scale-badge flex flex-col items-center p-3 rounded-2xl bg-red-50/50 border border-red-100 shadow-sm">
+                            <span class="text-xl font-black text-red-500 leading-none">F</span>
+                            <span class="text-[10px] font-bold text-red-400 mt-2 uppercase">&lt; 40</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button onclick="predictRequiredScore()" class="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white py-5 rounded-2xl font-black text-xl transition-all shadow-xl transform active:scale-[0.98]">
+                    Predict End-Sem Score
+                </button>
+
+                <div id="predictor-result" class="hidden p-8 bg-indigo-50 rounded-3xl border border-indigo-100 text-center">
+                    <p class="text-slate-600 font-medium mb-2 text-lg">To achieve an <span id="res-grade-name" class="font-bold text-purple-600 underline">O</span> grade, you need:</p>
+                    <div id="res-score" class="text-5xl font-black text-slate-800">00 / 75</div>
+                    <p class="text-xs text-slate-400 mt-4 font-bold uppercase tracking-widest">(25% Internals + 75% End-Sem)</p>
+                </div>
+                
+                <div id="predictor-error" class="hidden p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-bold text-center"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        let semesters = [];
+        let selectedTargetGrade = null;
+
+        window.onload = () => { addSemester(); updateTogglePosition(); };
+
+        function validateRange(input, min, max) {
+            let val = parseFloat(input.value);
+            if (val < min) input.value = min;
+            if (val > max) input.value = max;
+        }
+
+        function switchTab(tab) {
+            const trackerSec = document.getElementById('tracker-section');
+            const predictorSec = document.getElementById('predictor-section');
+            const btnTracker = document.getElementById('tab-tracker');
+            const btnPredictor = document.getElementById('tab-predictor');
+            const indicator = document.getElementById('toggle-indicator');
+
+            if (tab === 'tracker') {
+                trackerSec.classList.remove('hidden');
+                predictorSec.classList.add('hidden');
+                btnTracker.classList.add('active');
+                btnPredictor.classList.remove('active');
+                indicator.style.width = `${btnTracker.offsetWidth}px`;
+                indicator.style.transform = 'translateX(0)';
+            } else {
+                trackerSec.classList.add('hidden');
+                predictorSec.classList.remove('hidden');
+                btnPredictor.classList.add('active');
+                btnTracker.classList.remove('active');
+                indicator.style.width = `${btnPredictor.offsetWidth}px`;
+                indicator.style.transform = `translateX(${btnTracker.offsetWidth}px)`;
+            }
+        }
+
+        function updateTogglePosition() {
+            const btnTracker = document.getElementById('tab-tracker');
+            const indicator = document.getElementById('toggle-indicator');
+            indicator.style.width = `${btnTracker.offsetWidth}px`;
+        }
+
+        function addSemester() {
+            const semId = Date.now();
+            semesters.push({
+                id: semId,
+                name: `Semester ${semesters.length + 1}`,
+                subjects: [{ id: Date.now() + 1, name: '', marks: '', credits: '' }]
+            });
+            renderSemesters();
+        }
+
+        function addSubject(semId) {
+            const sem = semesters.find(s => s.id === semId);
+            sem.subjects.push({ id: Date.now(), name: '', marks: '', credits: '' });
+            renderSemesters();
+        }
+
+        function getGradeLetter(marks) {
+            const m = parseFloat(marks);
+            if (isNaN(m)) return '-';
+            if (m >= 90) return 'O';
+            if (m >= 80) return 'A';
+            if (m >= 70) return 'B';
+            if (m >= 60) return 'C';
+            if (m >= 50) return 'D';
+            if (m >= 40) return 'E';
+            return 'F';
+        }
+
+        function updateSubject(semId, subId, field, value) {
+            const sem = semesters.find(s => s.id === semId);
+            const sub = sem.subjects.find(s => s.id === subId);
+            let processedVal = value;
+            if (field === 'marks') {
+                processedVal = parseFloat(value);
+                if (processedVal < 0) processedVal = 0;
+                if (processedVal > 100) processedVal = 100;
+                
+                const gradeBox = document.getElementById(`grade-${subId}`);
+                const grade = getGradeLetter(processedVal);
+                gradeBox.innerText = grade;
+                gradeBox.className = `sub-grade-display ${grade === 'F' ? 'grade-fail' : (grade !== '-' ? 'grade-pass' : '')}`;
+            } else if (field === 'credits') {
+                processedVal = parseFloat(value);
+                if (processedVal < 0) processedVal = 0;
+            }
+            sub[field] = processedVal;
+        }
+
+        function removeSubject(semId, subId) {
+            const sem = semesters.find(s => s.id === semId);
+            sem.subjects = sem.subjects.filter(sub => sub.id !== subId);
+            renderSemesters();
+        }
+
+        function removeSemester(semId) {
+            semesters = semesters.filter(s => s.id !== semId);
+            renderSemesters();
+        }
+
+        function getGradePoint(marks) {
+            const m = parseFloat(marks);
+            if (m >= 90) return 10;
+            if (m >= 80) return 9;
+            if (m >= 70) return 8;
+            if (m >= 60) return 7;
+            if (m >= 50) return 6;
+            if (m >= 40) return 5;
+            return 0;
+        }
+
+        function getGradeLetterFromCGPA(cgpa) {
+            const val = parseFloat(cgpa);
+            if (val >= 9.0) return 'O';
+            if (val >= 8.0) return 'A';
+            if (val >= 7.0) return 'B';
+            if (val >= 6.0) return 'C';
+            if (val >= 5.0) return 'D';
+            if (val >= 4.0) return 'E';
+            return 'F';
+        }
+
+        function calculateCGPA() {
+            let totalWeightedPoints = 0;
+            let totalCredits = 0;
+            semesters.forEach(sem => {
+                sem.subjects.forEach(sub => {
+                    const marks = parseFloat(sub.marks);
+                    const credits = parseFloat(sub.credits);
+                    if (!isNaN(marks) && !isNaN(credits)) {
+                        totalWeightedPoints += getGradePoint(marks) * credits;
+                        totalCredits += credits;
+                    }
+                });
+            });
+            const res = document.getElementById('cgpa-result');
+            if (totalCredits === 0) { showToast("Enter marks and credits first."); return; }
+            
+            const cgpa = (totalWeightedPoints / totalCredits).toFixed(2);
+            const letter = getGradeLetterFromCGPA(cgpa);
+            
+            document.getElementById('cgpa-value').innerText = cgpa;
+            document.getElementById('grade-letter-value').innerText = letter;
+            
+            res.classList.remove('hidden');
+            res.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function renderSemesters() {
+            const container = document.getElementById('semester-container');
+            container.innerHTML = '';
+            semesters.forEach((sem, idx) => {
+                const div = document.createElement('div');
+                div.className = 'glass-card overflow-hidden shadow-sm semester-card';
+                div.innerHTML = `
+                    <div class="bg-white/40 px-8 py-5 border-b border-slate-200 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-lg uppercase tracking-tight">Semester ${idx + 1}</h3>
+                        <button onclick="removeSemester(${sem.id})" class="text-slate-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50">
+                            <i class="fas fa-trash-alt text-lg"></i>
+                        </button>
+                    </div>
+                    <div class="p-4 space-y-4">
+                        ${sem.subjects.map(sub => {
+                            const grade = getGradeLetter(sub.marks);
+                            return `
+                            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end p-4 bg-white/50 rounded-xl border border-slate-100">
+                                <div class="md:col-span-5">
+                                    <label class="block text-[10px] font-bold text-slate-400 mb-1 ml-1 uppercase">Subject Name</label>
+                                    <input type="text" value="${sub.name}" onchange="updateSubject(${sem.id}, ${sub.id}, 'name', this.value)" 
+                                           placeholder="Subject Name" class="w-full px-5 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all font-medium text-sm">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-[10px] font-bold text-slate-400 mb-1 ml-1 uppercase">Marks</label>
+                                    <input type="number" min="0" max="100" value="${sub.marks}" 
+                                           oninput="validateRange(this, 0, 100); updateSubject(${sem.id}, ${sub.id}, 'marks', this.value)" 
+                                           placeholder="Marks" class="w-full px-5 py-3 bg-white border border-slate-300 rounded-lg font-bold text-sm">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-[10px] font-bold text-slate-400 mb-1 ml-1 uppercase">Credits</label>
+                                    <input type="number" min="0" value="${sub.credits}" 
+                                           oninput="validateRange(this, 0, 99); updateSubject(${sem.id}, ${sub.id}, 'credits', this.value)" 
+                                           placeholder="Credits" class="w-full px-5 py-3 bg-white border border-slate-300 rounded-lg font-bold text-sm">
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-[10px] font-bold text-slate-400 mb-1 ml-1 uppercase">Grade</label>
+                                    <div id="grade-${sub.id}" class="sub-grade-display ${grade === 'F' ? 'grade-fail' : (grade !== '-' ? 'grade-pass' : '')}">
+                                        ${grade}
+                                    </div>
+                                </div>
+                                <div class="md:col-span-1 flex justify-end">
+                                    <button onclick="removeSubject(${sem.id}, ${sub.id})" class="text-slate-300 hover:text-red-500 transition mb-3">
+                                        <i class="fas fa-times-circle text-xl"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `}).join('')}
+                    </div>
+                    <div class="p-6 bg-slate-50/50 border-t border-slate-100">
+                        <button onclick="addSubject(${sem.id})" class="text-indigo-600 font-extrabold text-sm flex items-center hover:translate-x-1 transition-transform">
+                            <i class="fas fa-plus-circle mr-2"></i> Add Subject
+                        </button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function selectGrade(grade, points) {
+            selectedTargetGrade = grade;
+            document.querySelectorAll('.grade-btn').forEach(btn => {
+                btn.classList.remove('grade-btn-active');
+            });
+            const activeBtn = document.querySelector(`.grade-btn[data-grade="${grade}"]`);
+            if (activeBtn) activeBtn.classList.add('grade-btn-active');
+        }
+
+        function predictRequiredScore() {
+            const internals = parseFloat(document.getElementById('internal-marks').value);
+            const err = document.getElementById('predictor-error');
+            const res = document.getElementById('predictor-result');
+            err.classList.add('hidden'); res.classList.add('hidden');
+
+            if (isNaN(internals) || internals < 0 || internals > 25) {
+                err.innerText = "Enter valid internals (0-25).";
+                err.classList.remove('hidden'); return;
+            }
+            if (!selectedTargetGrade) {
+                err.innerText = "Select a target grade.";
+                err.classList.remove('hidden'); return;
+            }
+
+            const thresholds = { 'O': 90, 'A': 80, 'B': 70, 'C': 60, 'D': 50, 'E': 40 };
+            const req = thresholds[selectedTargetGrade] - internals;
+            
+            document.getElementById('res-grade-name').innerText = selectedTargetGrade;
+            const scoreDisplay = document.getElementById('res-score');
+            
+            if (req <= 0) { scoreDisplay.innerText = "Target Achieved!"; scoreDisplay.className = "text-3xl font-black text-emerald-500"; }
+            else if (req > 75) { 
+                scoreDisplay.innerText = "Not Possible"; scoreDisplay.className = "text-3xl font-black text-red-500";
+                err.innerText = `To get ${selectedTargetGrade}, you'd need ${req.toFixed(1)}/75 in End-Sem.`;
+                err.classList.remove('hidden');
+            } else {
+                scoreDisplay.innerText = `${req.toFixed(1)} / 75`;
+                scoreDisplay.className = "text-5xl font-black text-slate-800";
+            }
+            res.classList.remove('hidden');
+        }
+
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-8 py-4 rounded-xl shadow-2xl z-50 animate-bounce font-bold';
+            t.innerText = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2500);
+        }
+    </script>
+</body>
+</html>
